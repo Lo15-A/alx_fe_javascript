@@ -137,20 +137,26 @@ function importFromJsonFile(event) {
   fileReader.readAsText(event.target.files[0]);
 }
 
-// Sync with mock server and resolve conflicts (server wins)
+// Simulate fetching from server (mocked)
+function fetchQuotesFromServer() {
+  return new Promise(resolve => {
+    setTimeout(() => {
+      resolve([
+        { text: "Blessed are the peacemakers.", category: "Peace (Matthew 5:9)" },
+        { text: "Ask and it will be given to you.", category: "Faith (Matthew 7:7)" }
+      ]);
+    }, 1000);
+  });
+}
+
+// Sync with mock server (server wins)
 function syncWithServer() {
   const msgBox = document.getElementById('messageBox');
   msgBox.textContent = 'Syncing...';
 
-  fetch('https://jsonplaceholder.typicode.com/posts/1') // dummy endpoint
-    .then(response => response.json())
-    .then(data => {
-      const serverQuotes = [
-        { text: "Blessed are the peacemakers.", category: "Peace (Matthew 5:9)" },
-        { text: "Ask and it will be given to you.", category: "Faith (Matthew 7:7)" }
-      ];
-
-      quotes = serverQuotes; // simulate conflict resolution: server wins
+  fetchQuotesFromServer()
+    .then(serverQuotes => {
+      quotes = serverQuotes;
       saveQuotes();
       populateCategories();
       filterQuotes();
@@ -182,6 +188,9 @@ document.addEventListener('DOMContentLoaded', () => {
     quoteDisplay.appendChild(verse);
     quoteDisplay.appendChild(cat);
   }
+
+  // Periodic sync every 60 seconds
+  setInterval(syncWithServer, 60000);
 });
 
 // Show quote button
