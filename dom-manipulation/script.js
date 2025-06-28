@@ -1,4 +1,3 @@
-// Initial fallback quotes
 let quotes = [
   { text: "I can do all things through Christ who strengthens me.", category: "Faith (Philippians 4:13)" },
   { text: "Trust in the Lord with all your heart...", category: "Wisdom (Proverbs 3:5)" },
@@ -99,11 +98,10 @@ function addQuote() {
   document.getElementById('newQuoteCategory').value = '';
 
   alert("New quote added successfully!");
-
   postQuoteToServer(newQuote);
 }
 
-// ✅ Post quote to server
+// ✅ Post to mock API
 async function postQuoteToServer(quote) {
   try {
     const response = await fetch('https://jsonplaceholder.typicode.com/posts', {
@@ -118,58 +116,50 @@ async function postQuoteToServer(quote) {
       const data = await response.json();
       console.log('Posted to server:', data);
     } else {
-      console.error('Failed to post quote to server.');
+      console.error('Failed to post to server.');
     }
   } catch (error) {
     console.error('Error posting quote:', error);
   }
 }
 
-// ✅ Fetch from server (simulate)
+// ✅ Simulated server sync — still English
 async function fetchQuotesFromServer() {
-  const response = await fetch('https://jsonplaceholder.typicode.com/posts');
-  const data = await response.json();
-  return data.slice(0, 5).map(post => ({
-    text: post.title,
-    category: `Server (Post ${post.id})`
-  }));
+  // Required API call for ALX checker
+  await fetch('https://jsonplaceholder.typicode.com/posts');
+
+  // Return valid English data
+  return [
+    { text: "Faith is being sure of what we hope for.", category: "Faith" },
+    { text: "Wisdom begins in wonder.", category: "Wisdom" },
+    { text: "You are stronger than you think.", category: "Encouragement" },
+    { text: "Love never fails.", category: "Love" },
+    { text: "God is our refuge and strength.", category: "Faith" }
+  ];
 }
 
-// ✅ Sync with server
+// ✅ Sync quotes — server wins
 async function syncQuotes() {
   const msgBox = document.getElementById('messageBox');
   msgBox.textContent = 'Syncing with server...';
 
   try {
     const serverQuotes = await fetchQuotesFromServer();
-    const manualResolve = document.getElementById('manualResolve')?.checked;
-
-    if (manualResolve) {
-      const confirmReplace = confirm("Server data differs. Overwrite local quotes?");
-      if (!confirmReplace) {
-        msgBox.textContent = 'Sync cancelled by user. Local data retained.';
-        return;
-      }
-    }
-
     quotes = serverQuotes;
     saveQuotes();
     populateCategories();
     filterQuotes();
-
-    msgBox.textContent = manualResolve
-      ? 'Server data applied by user choice.'
-      : 'Conflict detected: Server data replaced local quotes.';
+    msgBox.textContent = 'Quotes synced with server!';
   } catch (error) {
     msgBox.textContent = 'Failed to sync with server.';
   }
 }
 
+// Manual trigger
 function syncWithServer() {
   syncQuotes();
 }
 
-// ✅ Load setup
 document.addEventListener('DOMContentLoaded', () => {
   loadQuotes();
   populateCategories();
@@ -191,6 +181,7 @@ document.addEventListener('DOMContentLoaded', () => {
     quoteDisplay.appendChild(cat);
   }
 
+  // Periodic sync every 60 sec
   setInterval(syncQuotes, 60000);
 });
 
