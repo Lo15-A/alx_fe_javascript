@@ -53,6 +53,14 @@
     <input type="file" id="importFile" accept=".json" onchange="importFromJsonFile(event)" />
   </div>
 
+  <!-- Manual Conflict Resolution Toggle -->
+  <div>
+    <label>
+      <input type="checkbox" id="manualResolve" />
+      Enable manual conflict resolution
+    </label>
+  </div>
+
   <!-- Sync quotes with server -->
   <div>
     <button onclick="syncWithServer()">Sync Now</button>

@@ -90,7 +90,8 @@ function addQuote() {
     return;
   }
 
-  quotes.push({ text, category });
+  const newQuote = { text, category };
+  quotes.push(newQuote);
   saveQuotes();
   populateCategories();
 
@@ -98,7 +99,102 @@ function addQuote() {
   document.getElementById('newQuoteCategory').value = '';
 
   alert("New quote added successfully!");
+
+  postQuoteToServer(newQuote);
 }
+
+// ✅ Post quote to server
+async function postQuoteToServer(quote) {
+  try {
+    const response = await fetch('https://jsonplaceholder.typicode.com/posts', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(quote),
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      console.log('Posted to server:', data);
+    } else {
+      console.error('Failed to post quote to server.');
+    }
+  } catch (error) {
+    console.error('Error posting quote:', error);
+  }
+}
+
+// ✅ Fetch from server (simulate)
+async function fetchQuotesFromServer() {
+  const response = await fetch('https://jsonplaceholder.typicode.com/posts');
+  const data = await response.json();
+  return data.slice(0, 5).map(post => ({
+    text: post.title,
+    category: `Server (Post ${post.id})`
+  }));
+}
+
+// ✅ Sync with server
+async function syncQuotes() {
+  const msgBox = document.getElementById('messageBox');
+  msgBox.textContent = 'Syncing with server...';
+
+  try {
+    const serverQuotes = await fetchQuotesFromServer();
+    const manualResolve = document.getElementById('manualResolve')?.checked;
+
+    if (manualResolve) {
+      const confirmReplace = confirm("Server data differs. Overwrite local quotes?");
+      if (!confirmReplace) {
+        msgBox.textContent = 'Sync cancelled by user. Local data retained.';
+        return;
+      }
+    }
+
+    quotes = serverQuotes;
+    saveQuotes();
+    populateCategories();
+    filterQuotes();
+
+    msgBox.textContent = manualResolve
+      ? 'Server data applied by user choice.'
+      : 'Conflict detected: Server data replaced local quotes.';
+  } catch (error) {
+    msgBox.textContent = 'Failed to sync with server.';
+  }
+}
+
+function syncWithServer() {
+  syncQuotes();
+}
+
+// ✅ Load setup
+document.addEventListener('DOMContentLoaded', () => {
+  loadQuotes();
+  populateCategories();
+
+  const last = sessionStorage.getItem('lastQuote');
+  const lastFilter = localStorage.getItem('lastFilter');
+
+  if (lastFilter) {
+    document.getElementById('categoryFilter').value = lastFilter;
+    filterQuotes();
+  } else if (last) {
+    const quote = JSON.parse(last);
+    const quoteDisplay = document.getElementById('quoteDisplay');
+    const verse = document.createElement('p');
+    verse.innerHTML = `<strong>Verse:</strong> "${quote.text}"`;
+    const cat = document.createElement('p');
+    cat.innerHTML = `<strong>Category:</strong> ${quote.category}`;
+    quoteDisplay.appendChild(verse);
+    quoteDisplay.appendChild(cat);
+  }
+
+  setInterval(syncQuotes, 60000);
+});
+
+document.getElementById('newQuote').addEventListener('click', showRandomQuote);
 
 function exportToJsonFile() {
   const dataStr = JSON.stringify(quotes, null, 2);
@@ -130,65 +226,3 @@ function importFromJsonFile(event) {
   };
   fileReader.readAsText(event.target.files[0]);
 }
-
-// ✅ Fetch quotes from server using async/await
-async function fetchQuotesFromServer() {
-  const response = await fetch('https://jsonplaceholder.typicode.com/posts');
-  const data = await response.json();
-  // Simulate quote structure (using first 5 posts)
-  return data.slice(0, 5).map(post => ({
-    text: post.title,
-    category: `Server (Post ${post.id})`
-  }));
-}
-
-// ✅ Sync with server and apply conflict resolution
-async function syncQuotes() {
-  const msgBox = document.getElementById('messageBox');
-  msgBox.textContent = 'Syncing with server...';
-
-  try {
-    const serverQuotes = await fetchQuotesFromServer();
-    quotes = serverQuotes; // Server wins
-    saveQuotes();
-    populateCategories();
-    filterQuotes();
-    msgBox.textContent = 'Synced with server. Server data applied.';
-  } catch (error) {
-    msgBox.textContent = 'Failed to sync with server.';
-  }
-}
-
-// Alias for manual sync button (used in HTML)
-function syncWithServer() {
-  syncQuotes();
-}
-
-// ✅ Load and setup everything
-document.addEventListener('DOMContentLoaded', () => {
-  loadQuotes();
-  populateCategories();
-
-  const last = sessionStorage.getItem('lastQuote');
-  const lastFilter = localStorage.getItem('lastFilter');
-
-  if (lastFilter) {
-    document.getElementById('categoryFilter').value = lastFilter;
-    filterQuotes();
-  } else if (last) {
-    const quote = JSON.parse(last);
-    const quoteDisplay = document.getElementById('quoteDisplay');
-    const verse = document.createElement('p');
-    verse.innerHTML = `<strong>Verse:</strong> "${quote.text}"`;
-    const cat = document.createElement('p');
-    cat.innerHTML = `<strong>Category:</strong> ${quote.category}`;
-    quoteDisplay.appendChild(verse);
-    quoteDisplay.appendChild(cat);
-  }
-
-  // ✅ Periodically sync every 60 seconds
-  setInterval(syncQuotes, 60000);
-});
-
-// Event listener for random quote
-document.getElementById('newQuote').addEventListener('click', showRandomQuote);
