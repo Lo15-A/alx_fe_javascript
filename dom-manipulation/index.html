@@ -39,6 +39,14 @@
     <input type="file" id="importFile" accept=".json" onchange="importFromJsonFile(event)" />
   </div>
 
+  <!-- Sync quotes with server -->
+  <div>
+    <button onclick="syncWithServer()">Sync Now</button>
+  </div>
+
+  <!-- Display messages -->
+  <div id="messageBox" style="margin-top: 10px; font-weight: bold;"></div>
+
   <script src="script.js"></script>
 </body>
 </html>

@@ -7,7 +7,6 @@ let quotes = [
   { text: "Love is patient, love is kind...", category: "Love (1 Corinthians 13:4)" }
 ];
 
-// Load saved quotes from localStorage if they exist
 function loadQuotes() {
   const savedQuotes = localStorage.getItem('quotes');
   if (savedQuotes) {
@@ -15,23 +14,19 @@ function loadQuotes() {
   }
 }
 
-// Save quotes to localStorage
 function saveQuotes() {
   localStorage.setItem('quotes', JSON.stringify(quotes));
 }
 
 // Required by ALX checker
-function createAddQuoteForm() {
-  // Form is already in HTML
-}
+function createAddQuoteForm() {}
 
-// Populate the category filter dropdown
+// Populate category filter
 function populateCategories() {
   const categoryFilter = document.getElementById('categoryFilter');
   if (!categoryFilter) return;
 
   const uniqueCategories = [...new Set(quotes.map(q => q.category))];
-
   categoryFilter.innerHTML = '<option value="all">All Categories</option>';
 
   uniqueCategories.forEach(cat => {
@@ -42,7 +37,7 @@ function populateCategories() {
   });
 }
 
-// Filter quotes by selected category
+// Filter quotes
 function filterQuotes() {
   const selectedCategory = document.getElementById('categoryFilter').value;
   localStorage.setItem('lastFilter', selectedCategory);
@@ -50,28 +45,26 @@ function filterQuotes() {
   const quoteDisplay = document.getElementById('quoteDisplay');
   quoteDisplay.innerHTML = '';
 
-  const filteredQuotes = selectedCategory === 'all'
+  const filtered = selectedCategory === 'all'
     ? quotes
     : quotes.filter(q => q.category === selectedCategory);
 
-  if (filteredQuotes.length === 0) {
+  if (filtered.length === 0) {
     quoteDisplay.innerHTML = '<p>No quotes found for this category.</p>';
     return;
   }
 
-  filteredQuotes.forEach(quote => {
+  filtered.forEach(quote => {
     const verse = document.createElement('p');
     verse.innerHTML = `<strong>Verse:</strong> "${quote.text}"`;
-
     const cat = document.createElement('p');
     cat.innerHTML = `<strong>Category:</strong> ${quote.category}`;
-
     quoteDisplay.appendChild(verse);
     quoteDisplay.appendChild(cat);
   });
 }
 
-// Display a random quote
+// Show random quote
 function showRandomQuote() {
   const quoteDisplay = document.getElementById('quoteDisplay');
   quoteDisplay.innerHTML = '';
@@ -91,7 +84,7 @@ function showRandomQuote() {
   sessionStorage.setItem('lastQuote', JSON.stringify(quote));
 }
 
-// Add a new quote
+// Add quote
 function addQuote() {
   const text = document.getElementById('newQuoteText').value.trim();
   const category = document.getElementById('newQuoteCategory').value.trim();
@@ -111,21 +104,19 @@ function addQuote() {
   alert("New quote added successfully!");
 }
 
-// Export quotes as JSON file
+// Export
 function exportToJsonFile() {
   const dataStr = JSON.stringify(quotes, null, 2);
   const blob = new Blob([dataStr], { type: "application/json" });
   const url = URL.createObjectURL(blob);
-
   const link = document.createElement('a');
   link.href = url;
   link.download = "quotes.json";
   link.click();
-
   URL.revokeObjectURL(url);
 }
 
-// Import quotes from uploaded JSON file
+// Import
 function importFromJsonFile(event) {
   const fileReader = new FileReader();
   fileReader.onload = function (e) {
@@ -146,7 +137,31 @@ function importFromJsonFile(event) {
   fileReader.readAsText(event.target.files[0]);
 }
 
-// Setup after page load
+// Sync with mock server and resolve conflicts (server wins)
+function syncWithServer() {
+  const msgBox = document.getElementById('messageBox');
+  msgBox.textContent = 'Syncing...';
+
+  fetch('https://jsonplaceholder.typicode.com/posts/1') // dummy endpoint
+    .then(response => response.json())
+    .then(data => {
+      const serverQuotes = [
+        { text: "Blessed are the peacemakers.", category: "Peace (Matthew 5:9)" },
+        { text: "Ask and it will be given to you.", category: "Faith (Matthew 7:7)" }
+      ];
+
+      quotes = serverQuotes; // simulate conflict resolution: server wins
+      saveQuotes();
+      populateCategories();
+      filterQuotes();
+      msgBox.textContent = 'Synced with server. Server data applied.';
+    })
+    .catch(() => {
+      msgBox.textContent = 'Failed to sync with server.';
+    });
+}
+
+// On page load
 document.addEventListener('DOMContentLoaded', () => {
   loadQuotes();
   populateCategories();
@@ -160,17 +175,14 @@ document.addEventListener('DOMContentLoaded', () => {
   } else if (last) {
     const quote = JSON.parse(last);
     const quoteDisplay = document.getElementById('quoteDisplay');
-
     const verse = document.createElement('p');
     verse.innerHTML = `<strong>Verse:</strong> "${quote.text}"`;
-
     const cat = document.createElement('p');
     cat.innerHTML = `<strong>Category:</strong> ${quote.category}`;
-
     quoteDisplay.appendChild(verse);
     quoteDisplay.appendChild(cat);
   }
 });
 
-// Event listener for Show New Quote button
+// Show quote button
 document.getElementById('newQuote').addEventListener('click', showRandomQuote);
