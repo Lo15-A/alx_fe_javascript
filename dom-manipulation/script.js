@@ -21,7 +21,6 @@ function saveQuotes() {
 // Required by ALX checker
 function createAddQuoteForm() {}
 
-// Populate category filter
 function populateCategories() {
   const categoryFilter = document.getElementById('categoryFilter');
   if (!categoryFilter) return;
@@ -37,7 +36,6 @@ function populateCategories() {
   });
 }
 
-// Filter quotes
 function filterQuotes() {
   const selectedCategory = document.getElementById('categoryFilter').value;
   localStorage.setItem('lastFilter', selectedCategory);
@@ -64,7 +62,6 @@ function filterQuotes() {
   });
 }
 
-// Show random quote
 function showRandomQuote() {
   const quoteDisplay = document.getElementById('quoteDisplay');
   quoteDisplay.innerHTML = '';
@@ -84,7 +81,6 @@ function showRandomQuote() {
   sessionStorage.setItem('lastQuote', JSON.stringify(quote));
 }
 
-// Add quote
 function addQuote() {
   const text = document.getElementById('newQuoteText').value.trim();
   const category = document.getElementById('newQuoteCategory').value.trim();
@@ -104,7 +100,6 @@ function addQuote() {
   alert("New quote added successfully!");
 }
 
-// Export
 function exportToJsonFile() {
   const dataStr = JSON.stringify(quotes, null, 2);
   const blob = new Blob([dataStr], { type: "application/json" });
@@ -116,7 +111,6 @@ function exportToJsonFile() {
   URL.revokeObjectURL(url);
 }
 
-// Import
 function importFromJsonFile(event) {
   const fileReader = new FileReader();
   fileReader.onload = function (e) {
@@ -137,37 +131,40 @@ function importFromJsonFile(event) {
   fileReader.readAsText(event.target.files[0]);
 }
 
-// Simulate fetching from server (mocked)
-function fetchQuotesFromServer() {
-  return new Promise(resolve => {
-    setTimeout(() => {
-      resolve([
-        { text: "Blessed are the peacemakers.", category: "Peace (Matthew 5:9)" },
-        { text: "Ask and it will be given to you.", category: "Faith (Matthew 7:7)" }
-      ]);
-    }, 1000);
-  });
+// ✅ Fetch quotes from server using async/await
+async function fetchQuotesFromServer() {
+  const response = await fetch('https://jsonplaceholder.typicode.com/posts');
+  const data = await response.json();
+  // Simulate quote structure (using first 5 posts)
+  return data.slice(0, 5).map(post => ({
+    text: post.title,
+    category: `Server (Post ${post.id})`
+  }));
 }
 
-// Sync with mock server (server wins)
-function syncWithServer() {
+// ✅ Sync with server and apply conflict resolution
+async function syncQuotes() {
   const msgBox = document.getElementById('messageBox');
-  msgBox.textContent = 'Syncing...';
+  msgBox.textContent = 'Syncing with server...';
 
-  fetchQuotesFromServer()
-    .then(serverQuotes => {
-      quotes = serverQuotes;
-      saveQuotes();
-      populateCategories();
-      filterQuotes();
-      msgBox.textContent = 'Synced with server. Server data applied.';
-    })
-    .catch(() => {
-      msgBox.textContent = 'Failed to sync with server.';
-    });
+  try {
+    const serverQuotes = await fetchQuotesFromServer();
+    quotes = serverQuotes; // Server wins
+    saveQuotes();
+    populateCategories();
+    filterQuotes();
+    msgBox.textContent = 'Synced with server. Server data applied.';
+  } catch (error) {
+    msgBox.textContent = 'Failed to sync with server.';
+  }
 }
 
-// On page load
+// Alias for manual sync button (used in HTML)
+function syncWithServer() {
+  syncQuotes();
+}
+
+// ✅ Load and setup everything
 document.addEventListener('DOMContentLoaded', () => {
   loadQuotes();
   populateCategories();
@@ -189,9 +186,9 @@ document.addEventListener('DOMContentLoaded', () => {
     quoteDisplay.appendChild(cat);
   }
 
-  // Periodic sync every 60 seconds
-  setInterval(syncWithServer, 60000);
+  // ✅ Periodically sync every 60 seconds
+  setInterval(syncQuotes, 60000);
 });
 
-// Show quote button
+// Event listener for random quote
 document.getElementById('newQuote').addEventListener('click', showRandomQuote);
